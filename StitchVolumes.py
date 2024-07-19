@@ -375,7 +375,7 @@ class StitchVolumesLogic(ScriptedLoadableModuleLogic):
             zip(dataStartIdxs, imArrays, dataEndIdxs), key=lambda pair: pair[0]
         )
         orderedDataStartIdxs, orderedImArrays, orderedDataEndIdxs = zip(*ordered)
-        imCombined = np.zeros(imArrays[0].shape)
+        imCombined = np.full(imArrays[0].shape, np.min(orderedImArrays[0].flatten()))  # prepopulate stitched area with minimum value in first original image (i.e. air which has -1000 in CT or 0 in MRI)
         # We can use the starting and ending indices to determine whether there is overlap
         priorOverlapFlag = False
         for imIdx in range(len(orderedImArrays)):
@@ -403,7 +403,7 @@ class StitchVolumesLogic(ScriptedLoadableModuleLogic):
                 priorOverlapFlag = False
                 nextStartIdx = None
             sliceIndexTuple = getSliceIndexTuple(start1, end1, dim_to_stitch)
-            imCombined[sliceIndexTuple] = imArray[sliceIndexTuple]
+            imCombined = np.maximum(imCombined, imArray)        # max intensity between corresponding voxels are considered. OPPORTUNITY FOR DEVELOPMENT to use manual threshold
             # print(sliceIndexTuple)
 
         # Put the result into the stitched volume
@@ -662,7 +662,7 @@ def resample(
         "referenceVolume": refVolID,
         "outputVolume": outputVolID,
         "interpolationMode": interpolationMode,
-        "defaultValue": 0,
+        "defaultValue": -1000, #want to set this to the lowest values in any volume (i.e. air). Using -1000 to CT, but may need to change so resilent to different modalities
     }
     slicer.cli.runSync(slicer.modules.brainsresample, None, params)
     return output_vol_node
