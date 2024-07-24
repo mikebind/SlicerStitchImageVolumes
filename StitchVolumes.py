@@ -375,7 +375,10 @@ class StitchVolumesLogic(ScriptedLoadableModuleLogic):
             zip(dataStartIdxs, imArrays, dataEndIdxs), key=lambda pair: pair[0]
         )
         orderedDataStartIdxs, orderedImArrays, orderedDataEndIdxs = zip(*ordered)
-        imCombined = np.zeros(imArrays[0].shape)
+        
+        # Filling voxel values in stitched volume
+        # Prepopulate stitched area with the minimum value in the first of the original images (i.e. air which has -1000 in CT or 0 in MRI). This could error if there are no air voxels in the first image volume - if there is another way to find the normalised value of CT/MRI/other modalities that could be preferable...
+        imCombined = np.full(imArrays[0].shape, np.min(orderedImArrays[0].flatten()))
         # We can use the starting and ending indices to determine whether there is overlap
         priorOverlapFlag = False
         for imIdx in range(len(orderedImArrays)):
@@ -403,7 +406,9 @@ class StitchVolumesLogic(ScriptedLoadableModuleLogic):
                 priorOverlapFlag = False
                 nextStartIdx = None
             sliceIndexTuple = getSliceIndexTuple(start1, end1, dim_to_stitch)
-            imCombined[sliceIndexTuple] = imArray[sliceIndexTuple]
+            
+            # Using the maximum intensity between corresponding voxels in what will be the output volume.
+            imCombined = np.maximum(imCombined, imArray)        
             # print(sliceIndexTuple)
 
         # Put the result into the stitched volume
@@ -662,7 +667,9 @@ def resample(
         "referenceVolume": refVolID,
         "outputVolume": outputVolID,
         "interpolationMode": interpolationMode,
-        "defaultValue": 0,
+        # Want to set this to the lowest values in any volume (i.e. air). 
+        "defaultValue": -1000, # Currently -1000 to CT, but will need to change to a modality agnostic value. 
+        # Development opportunity: Could do something similar to imCombined prepopulation in the def_stitch_volumes(), class StitchVolumesLogic.
     }
     slicer.cli.runSync(slicer.modules.brainsresample, None, params)
     return output_vol_node
