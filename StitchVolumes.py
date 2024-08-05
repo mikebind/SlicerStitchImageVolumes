@@ -1462,7 +1462,7 @@ class StitchVolumesTest(ScriptedLoadableModuleTest):
             "A",
             imageSizeVox=(10, 10, 10),
             imageSpacingMm=(2, 2, 2),
-            imageOrigin=(1, 1, 1), (# puts corner at 0,0,0)
+            imageOrigin=(1, 1, 1),  # puts corner at (0,0,0)
             fillVoxelValue=100,
         )
         # VolB is 1 mm isotropic, 20 mm a side cubic,
@@ -1471,7 +1471,7 @@ class StitchVolumesTest(ScriptedLoadableModuleTest):
             "B",
             imageSizeVox=(20, 20, 20),
             imageSpacingMm=(1, 1, 1),
-            imageOrigin=(0.5, 10.5, 10.5), # puts corner at 0,10,10
+            imageOrigin=(0.5, 10.5, 10.5),  # puts corner at 0,10,10
             fillVoxelValue=0,
         )
         roiAuto = logic.createAutomaticROI([volA, volB])
